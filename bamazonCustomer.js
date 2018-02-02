@@ -17,16 +17,17 @@ connection.connect(err => {
 	afterConnection();
 });
 
+
 function afterConnection() {
 
 	connection.query("SELECT * FROM products", (err, res) => {
-
 		if (err) throw err;
 		
 		res.forEach(entry => {
 			console.log(entry.item_id + ". " + entry.product_name + "; price: $" + entry.price);
 		});
 
+		console.log("\n");
 
 		inquirer.prompt([
 			{
@@ -39,38 +40,69 @@ function afterConnection() {
 				message: "How many units of the product would you like to buy?"
 			}
 		]).then(answers => {
+
+			//	If the amount requested is LESS THAN the stock quantity of the requested item, then purchase.
 			if (answers.quantity <= res[answers.id - 1].stock_quantity) {
 				purchase(res, answers);
 			} else {
-				console.log("Insufficient quantity!");
+				console.log("Insufficient quantity!\n");
+				purchaseAgain();
 			}
 
-			connection.end();
-
 		});
-		
+
 	});
-
-
 }
 
+
 function purchase(res, answers) {
-	console.log(res[answers.id - 1].stock_quantity + " " + answers.quantity);
+	console.log("IN STOCK " + res[answers.id - 1].stock_quantity + ", REQUESTED " + answers.quantity);
 
 	var newQuantity = res[answers.id - 1].stock_quantity - answers.quantity;
 
-	var total = res[answers.id - 1].price * answers.quantity;
+	var totalCost = res[answers.id - 1].price * answers.quantity;
 
-	connection.query("UPDATE products SET stock_quantity=" + newQuantity + " WHERE item_id=" + answers.id,
+	var newSales = res[answers.id - 1].product_sales + totalCost;
+
+	//	Updating the "products" table's "stock_quantity" and "product_sales" columns:
+	connection.query("UPDATE products SET ? WHERE item_id=" + answers.id,
+		{
+			stock_quantity: newQuantity,
+			product_sales: newSales
+		},
 	(err,res) => {
 		if (err) throw err;
-		// if (res.changedRows) {
-		// 	console.log("SUCCESS!");
-		// } else {
-		// 	console.log("UNSUCCESSFUL")
-		// }
 		console.log(res.message);
-		console.log("total cost: " + total + "\nnew quantity: " + newQuantity);
+		console.log(
+			"total cost: " + totalCost + 
+			"\nnew quantity: " + newQuantity + 
+			"\nproduct total sales: " + newSales
+		);
+	});
 
+	//	Updating the "departments" table's "product_sales" column:
+	connection.query("SELECT product_sales FROM departments WHERE department_name=?", res[answers.id - 1].department_name,
+	(error,result) => {
+		var newDeptSales = result[0].product_sales + totalCost;
+		connection.query("UPDATE departments SET product_sales=" + newDeptSales + " WHERE department_name=?", res[answers.id - 1].department_name,
+		(e,r) => {
+			console.log(r.message);
+			purchaseAgain();
+		});
+	});
+}
+
+
+function purchaseAgain() {
+	inquirer.prompt([{
+		type: "confirm",
+		name: "restart",
+		message: "Do you want to make another selection?"
+	}]).then(ans => {
+		if (ans.restart) {
+			afterConnection();
+		} else {
+			connection.end();
+		}
 	});
 }
