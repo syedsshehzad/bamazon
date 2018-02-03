@@ -2,6 +2,9 @@
 
 var mysql = require("mysql");
 var inquirer = require("inquirer");
+var Table = require("cli-table2");
+var colors = require("colors/safe");
+var runAgain = require("./runAgain.js");
 
 var connection = mysql.createConnection({
 	host: "localhost",
@@ -19,12 +22,15 @@ connection.connect(err => {
 
 
 function afterConnection() {
-	inquirer.prompt([{
-		type: "list",
-		name: "choice",
-		message: "What do you want to do, manager?",
-		choices: ["View products for sale", "View low inventory", "Add to inventory", "Add new product"]
-	}]).then(answer => {
+
+	inquirer.prompt([
+		{
+			type: "list",
+			name: "choice",
+			message: "What do you want to do, manager?",
+			choices: ["View products for sale", "View low inventory", "Add to inventory", "Add new product"]
+		}
+	]).then(answer => {
 
 		switch (answer.choice) {
 
@@ -33,10 +39,33 @@ function afterConnection() {
 				connection.query("SELECT * FROM products",
 				(err,res) => {
 					if (err) throw err;
-					//res.forEach(entry => {	console.log(entry);	});
-					//res[i].itemid -> 
-					console.log(res[2][1]);
-					runAgain();
+					
+					var headings = [
+						colors.yellow("id"),
+						colors.yellow("name"),
+						colors.yellow("department"),
+						colors.yellow("price"),
+						colors.yellow("stock")
+					];
+					
+					var table = new Table({
+						head: headings
+					});
+					
+
+					for (var row = 0; row < res.length; row++) {
+						table.push([]);
+						table[row].push(
+							res[row].item_id, 
+							res[row].product_name, 
+							res[row].department_name, 
+							res[row].price, 
+							res[row].stock_quantity
+						);
+					}
+
+					console.log(table.toString());
+					runAgain(afterConnection,connection);
 				});
 				break;
 
@@ -45,8 +74,32 @@ function afterConnection() {
 				connection.query("SELECT * FROM products WHERE stock_quantity < 5",
 				(err,res) => {
 					if (err) throw err;
-					res.forEach(entry => {	console.log(entry);	});
-					runAgain();
+					
+					var headings = [
+						colors.yellow("id"),
+						colors.yellow("name"),
+						colors.yellow("department"),
+						colors.yellow("price"),
+						colors.yellow("stock")
+					];
+					
+					var table = new Table({
+						head: headings
+					});
+					
+					for (var row = 0; row < res.length; row++) {
+						table.push([]);
+						table[row].push(
+							res[row].item_id, 
+							res[row].product_name, 
+							res[row].department_name, 
+							res[row].price, 
+							res[row].stock_quantity
+						);
+					}
+
+					console.log(table.toString());
+					runAgain(afterConnection,connection);
 				});
 				break;
 				
@@ -75,7 +128,7 @@ function afterConnection() {
 							if (err) throw err;
 							console.log(res.message);
 							console.log("NEW QUANTITY " + newQuantity);
-							runAgain();
+							runAgain(afterConnection,connection);
 						});
 					});
 				});
@@ -83,57 +136,53 @@ function afterConnection() {
 
 			case "Add new product":
 
+				var listOfDept = [];
+				connection.query("SELECT * FROM departments", (error,result) => {
+					if (error) throw error;
+
+					result.forEach(entry => {
+						listOfDept.push(entry.department_name);
+					});
+				});
+
 				inquirer.prompt([
 					{
 						type: "input",
 						name: "product_name",
 						message: "What is the name of new product?"
 					}, {
-						type: "input",
+						type: "list",
 						name: "department_name",
-						message: "What department?"
+						message: "What department?",
+						choices: listOfDept
 					}, {
 						type: "input",
 						name: "price",
-						message: "What is the price?"
+						message: "What is the product\'s price?"
 					}, {
 						type: "input",
 						name: "stock_quantity",
 						message: "What is the stock quantity?"
 					}
 				]).then(ans => {
+
 					connection.query("INSERT INTO products SET ?",
-					{
-						product_name: ans.product_name,
-						department_name: ans.department_name,
-						price: ans.price,
-						stock_quantity: ans.stock_quantity
-					},
-					(err,res) => {
-						if (err) throw err;
-						console.log(res.message);
-						console.log("NEW PRODUCT " + ans.product_name);
-						runAgain();
+						{
+							product_name: ans.product_name,
+							department_name: ans.department_name,
+							price: ans.price,
+							stock_quantity: ans.stock_quantity,
+							product_sales: 0
+						},
+						(err,res) => {
+							if (err) throw err;
+							console.log(res.message);
+							console.log("NEW PRODUCT " + ans.product_name);
+							runAgain(afterConnection,connection);
 					});
 				});
 				break;	
 		}
 
-	});
-}
-
-
-function runAgain() {
-	console.log("\n");
-	inquirer.prompt([{
-		type: "confirm",
-		name: "restart",
-		message: "Do you want to make another selection?"
-	}]).then(ans => {
-		if (ans.restart) {
-			afterConnection();
-		} else {
-			connection.end();
-		}
 	});
 }
