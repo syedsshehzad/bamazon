@@ -52,7 +52,6 @@ function afterConnection() {
 					var table = new Table({
 						head: headings
 					});
-					
 
 					for (var row = 0; row < res.length; row++) {
 						table.push([]);

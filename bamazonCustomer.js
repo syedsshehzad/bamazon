@@ -24,6 +24,7 @@ function afterConnection() {
 	connection.query("SELECT * FROM products", (err, res) => {
 		if (err) throw err;
 		
+		//	Print each of the items for sale.
 		res.forEach(entry => {
 			console.log(entry.item_id + ". " + entry.product_name + "; price: $" + entry.price);
 		});
@@ -96,4 +97,3 @@ function purchase(item, answers) {
 		});
 	});
 }
-
