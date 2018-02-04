@@ -15,6 +15,11 @@ The tenth homework assignment.
   * To add to any products inventory
   * To add a new product to existing departments
 
+* A program for supervisors
+  * To view department-level data
+  * For each department, view sales and overhead costs
+  * Allows supervisor to create a new department and set overhead costs
+
 ## Requirements
 
 The requirements are all available from npm through *"npm install"*.
@@ -33,9 +38,21 @@ To run a program, enter in command prompt `node bamazonCustomer.js` for example.
 
 ## Pictures
 
+Customer buys
 ![customer buying product](/images/customer_buying.png)
-![manager adding product](/images/manager_adding.png)
+Manager's options
 ![manager options menu](/images/manager_menu.png)
+Manager views inventory
 ![manager viewing products](/images/manager_viewing.png)
-![supervisor adding department](/images/supervisor_adding.png)
+Manager adds to inventory
+![manager adding](/images/manager_adding.png)
+Manager adds new product
+![manager new product](/images/manager_creating.png)
+Manager views low inventory
+![manager viewing low](/images/manager_low.png)
+Supervisor's options
+![supervisor options menu](/images/supervisor_menu.png)
+Supervisor views departments
 ![supervisor viewing departments](/images/supervisor_viewing.png)
+Supervisor creates new department
+![supervisor adding department](/images/supervisor_adding.png)
