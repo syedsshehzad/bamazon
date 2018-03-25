@@ -1,6 +1,5 @@
 # bamazon
-The tenth homework assignment.
-
+(10)
 
 ## Components of the project
 
